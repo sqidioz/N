@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Душевный наставник</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, system-ui;
+            background: #0f0f1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 480px;
+            width: 100%;
+            background: #1a1a2e;
+            padding: 30px 25px;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            transition: background 0.6s ease;
+        }
+        .step { display: none; }
+        .step.active { display: block; }
+        h1 { font-size: 28px; text-align: center; margin-bottom: 10px; }
+        .sub { text-align: center; color: #8888aa; font-size: 14px; margin-bottom: 25px; }
+        label { display: block; font-size: 15px; color: #aaa; margin-top: 15px; margin-bottom: 5px; }
+        select, input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            border: none;
+            background: #0f0f1f;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 30px;
+            border: none;
+            background: #e94560;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.96); }
+        .skip-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 10px;
+            border-radius: 30px;
+            width: 100%;
+            margin-top: 12px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .skip-btn:active { background: #333; }
+        .chat-area {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+        }
+        .msg { margin-bottom: 12px; }
+        .msg.user { text-align: right; color: #aaccff; }
+        .msg.bot { text-align: left; color: #ddd; }
+        textarea {
+            width: 100%;
+            border-radius: 16px;
+            padding: 12px;
+            background: #0f0f1f;
+            color: white;
+            border: none;
+            margin-top: 12px;
+            resize: vertical;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- ШАГ 1: АВТОРИЗАЦИЯ -->
+    <div class="step active" id="stepAuth">
+        <h1>🧠 Душевный наставник</h1>
+        <div class="sub">Войди, чтобы продолжить</div>
+        <label>Имя</label>
+        <input type="text" id="loginName" placeholder="Как тебя зовут?">
+        <button onclick="doAuth()">Войти</button>
+    </div>
+
+    <!-- ШАГ 2: СТРАНА -->
+    <div class="step" id="stepCountry">
+        <h1>🌍 Где ты живёшь?</h1>
+        <div class="sub">Это поможет мне понимать твой контекст</div>
+        <label>Страна</label>
+        <select id="countrySelect">
+            <option value="russia">Россия</option>
+            <option value="other">Другая страна</option>
+        </select>
+        <button onclick="goToCity()">Далее</button>
+    </div>
+
+    <!-- ШАГ 3: ГОРОД -->
+    <div class="step" id="stepCity">
+        <h1>🏙️ Выбери город</h1>
+        <div class="sub">Или пропусти</div>
+        <button class="skip-btn" onclick="skipCity()">Пропустить город</button>
+        <button onclick="goToReligion()">Далее</button>
+    </div>
+
+    <!-- ШАГ 4: РЕЛИГИЯ -->
+    <div class="step" id="stepReligion">
+        <h1>🕊️ Религия</h1>
+        <div class="sub">Хочешь выбрать религию?</div>
+        <select id="religionSelect">
+            <option value="">Не выбрано</option>
+            <option value="islam">Ислам</option>
+            <option value="christianity">Христианство</option>
+            <option value="judaism">Иудаизм</option>
+            <option value="atheism">Атеизм</option>
+            <option value="buddhism">Буддизм</option>
+        </select>
+        <button class="skip-btn" onclick="skipReligion()">Пропустить</button>
+        <button onclick="goToChat()">Далее</button>
+    </div>
+
+    <!-- ШАГ 5: ЧАТ -->
+    <div class="step" id="stepChat">
+        <h1>🧠 Наставник</h1>
+        <div class="sub" id="userGreeting">Привет, друг!</div>
+        <div class="chat-area" id="chatArea">
+            <div class="msg bot">Привет! Я твой душевный наставник. Расскажи, что у тебя на душе.</div>
+        </div>
+        <textarea id="userInput" rows="2" placeholder="Напиши что-нибудь..."></textarea>
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+</div>
+
+<script>
+    let user = { name: '', country: 'russia', city: '', religion: '' };
+    const steps = ['stepAuth', 'stepCountry', 'stepCity', 'stepReligion', 'stepChat'];
+
+    function goToStep(index) {
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+        document.getElementById(steps[index]).classList.add('active');
+    }
+
+    function doAuth() {
+        const name = document.getElementById('loginName').value.trim();
+        if (!name) { alert('Введите имя'); return; }
+        user.name = name;
+        goToStep(1);
+    }
+
+    function goToCity() {
+        user.country = document.getElementById('countrySelect').value;
+        goToStep(2);
+    }
+
+    function skipCity() { user.city = ''; goToStep(3); }
+    function goToReligion() { goToStep(3); }
+    function skipReligion() { user.religion = ''; goToStep(4); }
+
+    function goToChat() {
+        user.religion = document.getElementById('religionSelect').value;
+        document.getElementById('userGreeting').textContent = 'Привет, ' + user.name + '! Я учитываю: ' + user.country + ', ' + (user.city || 'город не выбран') + ', религия: ' + (user.religion || 'не выбрана');
+        goToStep(4);
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+        const chat = document.getElementById('chatArea');
+        chat.innerHTML += '<div class="msg user">' + text + '</div>';
+        chat.innerHTML += '<div class="msg bot">Я тебя слышу. Расскажи подробнее.</div>';
+        input.value = '';
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    goToStep(0);
+</script>
+</body>
+</html>
